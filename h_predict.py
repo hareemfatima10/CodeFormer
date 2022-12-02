@@ -86,8 +86,8 @@ def predict(input_img):
     
     face_upsampler = upsampler if face_upsample else None
 
-    img = cv2.imread(str(input_img), cv2.IMREAD_COLOR)
-    #img = input_img
+    #img = cv2.imread(str(input_img), cv2.IMREAD_COLOR)
+    img = input_img
 
     if has_aligned:
         # the input faces are already cropped and aligned
@@ -149,16 +149,14 @@ def predict(input_img):
             restored_img = face_helper.paste_faces_to_input_image(
                 upsample_img=bg_img, draw_box=draw_box
             )
-    print("restored img")
-    plt.imshow(restored_img)
-    plt.show()
-
     # # save restored img
     # out_path = Path(tempfile.mkdtemp()) / 'output.png'
     imwrite(restored_img, '/content/output.png')
     return restored_img
     
-
-def restore(img):
-  res = predict(img)
-  return res
+def image_enhancer(input_images):
+  enhanced_images = []
+  for index, tup in enumerate(input_images):
+    res = predict(tup[0])
+    enhanced_images.append(res)
+  return enhanced_images
