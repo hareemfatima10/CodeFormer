@@ -1,6 +1,7 @@
 import tempfile
 import cv2
 import torch
+import matplotlib.pyplot as plt
 from torchvision.transforms.functional import normalize
 from basicsr.utils import imwrite, img2tensor, tensor2img
 from basicsr.archs.rrdbnet_arch import RRDBNet
@@ -45,7 +46,7 @@ def set_realesrgan():
         )
     return upsampler
 
-def predict(np_img):
+def predict(input_img):
     """Load the model into memory to make running multiple predictions efficient"""
     device = "cuda:0"
     upsampler = set_realesrgan()
@@ -78,12 +79,15 @@ def predict(np_img):
         use_parse=True,
         device=device,
     )
-
-    bg_upsampler = upsampler if background_enhance else None
+    #default parameters from demo
+    codeformer_fidelity = 0.7
+    bg_upsampler = None
+    face_upsample = True
+    
     face_upsampler = upsampler if face_upsample else None
 
-    #img = cv2.imread(str(image), cv2.IMREAD_COLOR)
-    img = np_img
+    img = cv2.imread(str(input_img), cv2.IMREAD_COLOR)
+    #img = input_img
 
     if has_aligned:
         # the input faces are already cropped and aligned
@@ -130,12 +134,12 @@ def predict(np_img):
         # upsample the background
         if bg_upsampler is not None:
             # Now only support RealESRGAN for upsampling background
-            bg_img = bg_upsampler.enhance(img, outscale=upscale)[0]
+            bg_img = bg_upsampler.enhance(img, outscale=upscale_factor)[0]
         else:
             bg_img = None
         face_helper.get_inverse_affine(None)
         # paste each restored face to the input image
-        if face_upsample and face_upsampler is not None:
+        if face_upsampler is not None:
             restored_img = face_helper.paste_faces_to_input_image(
                 upsample_img=bg_img,
                 draw_box=draw_box,
@@ -145,12 +149,16 @@ def predict(np_img):
             restored_img = face_helper.paste_faces_to_input_image(
                 upsample_img=bg_img, draw_box=draw_box
             )
+    print("restored img")
+    plt.imshow(restored_img)
+    plt.show()
 
-    # save restored img
-    out_path = Path(tempfile.mkdtemp()) / 'output.png'
-    imwrite(restored_img, str(out_path))
-
-    return out_path
+    # # save restored img
+    # out_path = Path(tempfile.mkdtemp()) / 'output.png'
+    imwrite(restored_img, '/content/output.png')
+    return restored_img
+    
 
 def restore(img):
-  predict(img)
+  res = predict(img)
+  return res
